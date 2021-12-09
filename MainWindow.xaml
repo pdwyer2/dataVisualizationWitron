@@ -10,7 +10,22 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <DataGrid x:Name="myDataGrid" HorizontalAlignment="Left" Height="302" Margin="10,108,0,0" VerticalAlignment="Top" Width="830"/>
-
+        <TextBox Name ="tableSearch" HorizontalAlignment="Left" Margin="33,26,0,0" Text="TextBox" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
+        <TextBox Name="packageSearch" HorizontalAlignment="Left" Margin="33,59,0,0" Text="TextBox" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
+        <Button Name="TableSearch" Content="Search" HorizontalAlignment="Left" Margin="168,24,0,0" VerticalAlignment="Top" Click="TableSearch_Button_Click"/>
+        <Button Content="PackageSearch"  HorizontalAlignment="Left" Margin="168,57,0,0" VerticalAlignment="Top"/>
+        <ComboBox Name="depthOfSearch" Text="Depth" Margin="268,26,542,379" SelectionChanged="depthOfSearch_Selection" >
+            <ComboBoxItem Content="0"></ComboBoxItem>
+            <ComboBoxItem Content="1"></ComboBoxItem>
+            <ComboBoxItem Content="2"></ComboBoxItem>
+            <ComboBoxItem Content="3"></ComboBoxItem>
+            <ComboBoxItem Content="4"></ComboBoxItem>
+            <ComboBoxItem Content="5"></ComboBoxItem>
+            <ComboBoxItem Content="6"></ComboBoxItem>
+            <ComboBoxItem Content="7"></ComboBoxItem>
+            <ComboBoxItem Content="8"></ComboBoxItem>
+            <ComboBoxItem Content="9"></ComboBoxItem>
+            <ComboBoxItem Content="10"></ComboBoxItem>
+        </ComboBox>
     </Grid>
 </Window>

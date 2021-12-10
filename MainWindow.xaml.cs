@@ -174,8 +174,8 @@ namespace dataVisualizerWPF
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            
- 
+
+            pakageParser("BSLN");
         }
 
         private void Window_Closed(object sender, EventArgs e)
@@ -217,6 +217,75 @@ namespace dataVisualizerWPF
             }
             return flag;
         }
+        private Boolean PackageExist(string name)
+        {
+            bool flag = false;
+            using (OracleConnection con = new OracleConnection(connectionString))
+            {
+                try
+                {
+                    con.Open();
+                    OracleCommand cmd = con.CreateCommand();
+                    cmd.CommandText =
+                        "select tname from tab where tname = '" + name + "'";
+                    cmd.CommandType = CommandType.Text;
+                    OracleDataReader dr = cmd.ExecuteReader();
+                    string result = "";
+                    while (dr.Read())
+                    {
+                        result = dr.GetString(0);
+                    }
+                    dr.Close();
+                    if (result != "")
+                        flag = true;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.ToString());
+                }
+            }
+            return flag;
+        }
+        private void pakageParser(string packageName)
+        {
+            List<string> packageTables = new List<string>();
+            using (OracleConnection con = new OracleConnection(connectionString))
+            {
+                try
+                {
+                    con.Open();
+                    OracleCommand cmd = con.CreateCommand();
+                    cmd.CommandText =
+                        "SELECT Text " +
+                        "FROM ALL_SOURCE " +
+                        "WHERE type = 'PACKAGE' " +
+                        "and name = '" + packageName + "' " +
+                        "ORDER BY line ";
+                    cmd.CommandType = CommandType.Text;
+                    OracleDataReader dr = cmd.ExecuteReader();
+                    string package = "";
+                    while(dr.Read())
+                    {
+                        package += dr.GetString(0);
+                    }
+                    
+                    //package = package.Replace("\n", "");
+                    while (package.Contains("("))
+                    {
+                        int start = package.IndexOf("(");
+                        int end = package.IndexOf(")") + 1;
+                        package = package.Remove(start, end - start);
+                    }
+                    Console.WriteLine(package);
+                    dr.Close();
+                }
+                catch(Exception e)
+                {
+
+                }
+            }
+        }
+        
         private void TableSearch_Button_Click(object sender, RoutedEventArgs e)
         {
             TableSearch.IsEnabled = false;

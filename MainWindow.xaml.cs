@@ -17,21 +17,27 @@ using Oracle.ManagedDataAccess.Client;
 using Oracle.ManagedDataAccess.Types;
 using System.Configuration;
 
+
 public class Table
 {
-    private string name;
-    private List<string> linksForward;
-    private List<string> linksBackward;
-    private List<string> col;
+    public string Name
+    { get; set; }
+    public List<string> LinksForward
+    { get; set; }
+    public List<string> LinksBackward
+    { get; set; }
+    public List<string> Col
+    { get; set; }
     public Table(string name, List<string> col, List<string> linksForward, List<string> linksBackward)
     {
-        this.name = name;
-        this.col = new List<string>(col);
-        this.linksForward = new List<string>(linksForward);
-        this.linksBackward = new List<string>(linksBackward);
+        Name = name;
+        Col = col;
+        LinksForward = linksForward;
+        LinksBackward = linksBackward;
 
     }
 }
+
 namespace dataVisualizerWPF
 {
     /// <summary>
@@ -40,16 +46,17 @@ namespace dataVisualizerWPF
     public partial class MainWindow : Window
     {
         Dictionary<string, Table> masterList = new Dictionary<string, Table>();
-        //THIS STRING IS ONLY GOOD FOR MATTHEWS'S PC: "TNS_ADMIN=E:\\School\\Current\\CAPSTONE\\WINDOWS.X64_193000_db_home\\network\\admin;USER ID=OT;PASSWORD=Orcl1234;DATA SOURCE=orclpdb;"
-        String connectionString = "TNS_ADMIN=E:\\School\\Current\\CAPSTONE\\WINDOWS.X64_193000_db_home\\network\\admin;USER ID=OT;PASSWORD=Orcl1234;DATA SOURCE=orclpdb;";
         private int depth = 3;  // this is the value to which for far the tables should link.  The dafault value is three.
+        OracleConnection con = null;
         public MainWindow()
         {
-            
+            //this.setConnection();
+            //InitializeComponent();
         }
 
         private void createTableRelations(string tableName, int d)
-        {         
+        {
+            String connectionString = "TNS_ADMIN=C:\\sqlInstaller\\network\\admin;USER ID=OT;PASSWORD=Orcl1234;DATA SOURCE=ORCLPDB;PERSIST SECURITY INFO=True";
             List<string> nextStep = new List<string>();
             using (OracleConnection con = new OracleConnection(connectionString))
             {
@@ -84,7 +91,7 @@ namespace dataVisualizerWPF
 
                     cmd.CommandType = CommandType.Text;
                     OracleDataReader dr = cmd.ExecuteReader();
-                    List<string> resultsForwardLink = new List<string>();
+                    List<String> resultsForwardLink = new List<String>();
                     while (dr.Read())
                     {
                         resultsForwardLink.Add(dr.GetString(0));
@@ -117,14 +124,14 @@ namespace dataVisualizerWPF
 
                     cmd.CommandType = CommandType.Text;
                     dr = cmd.ExecuteReader();
-                    List<string> resultsBackwardsLink = new List<string>();
+                    List<String> resultsBackwardsLink = new List<String>();
                     while (dr.Read())
                     {
                         resultsBackwardsLink.Add(dr.GetString(0));
                     }
 
                     // if the table has not been created then create it and add it to the master list
-                    if(masterList.ContainsKey(tableName) == false)
+                    if (masterList.ContainsKey(tableName) == false)
                     {
                         cmd.CommandText =
                         "select col.column_name " +
@@ -138,8 +145,8 @@ namespace dataVisualizerWPF
 
                         cmd.CommandType = CommandType.Text;
                         dr = cmd.ExecuteReader();
-                        List<string> colOfTable = new List<string>();
-                    while (dr.Read())
+                        List<String> colOfTable = new List<String>();
+                        while (dr.Read())
                         {
                             colOfTable.Add(dr.GetString(0));
                         }
@@ -167,141 +174,126 @@ namespace dataVisualizerWPF
                 {
                     createTableRelations(table, currentDepth);
                 }
-             }
+            }
         }
+        //private void setConnection()
+        //{
+        //    String connectionString = ConfigurationManager.ConnectionStrings["sampleDB"].ConnectionString;
+        //    con = new OracleConnection(connectionString);
+        //}
 
-   
+        private void displayConnections()
+        {
+            foreach (KeyValuePair<string, Table> item in masterList)
+            {
+                Console.WriteLine(item.Value.Name);
+                Console.WriteLine("---------------------");
+                foreach (string i in item.Value.Col)
+                {
+                    Console.WriteLine(i);
+                }
+                Console.WriteLine("---------------------");
+                Console.WriteLine("\n");
+            }
+        }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-
-            pakageParser("BSLN");
+            //this.createTableRelations("ORDERS", depth);
+            Console.WriteLine();
+            //this.displayConnections();
         }
 
         private void Window_Closed(object sender, EventArgs e)
         {
+            //con.Close();
+        }
+
+        private void tableSearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            string tableText = tableSearch.Text;
+            createTableRelations(tableText, depth);
+            displayConnections();
+            setTableData(masterList);
+        }
+
+        private void setTableData(Dictionary<string,Table> dictionary)
+        {
+            foreach (KeyValuePair<string, Table> item in masterList)
+            {
+                string tableName = item.Key;
+                String connectionString = "TNS_ADMIN=C:\\sqlInstaller\\network\\admin;USER ID=OT;PASSWORD=Orcl1234;DATA SOURCE=ORCLPDB;PERSIST SECURITY INFO=True";
+                using (OracleConnection con = new OracleConnection(connectionString))
+                {
+                    con.Open();
+                    OracleCommand cmd = con.CreateCommand();
+                    cmd.CommandText =
+                               "select col.column_name as \"" + tableName + "\" " +
+                               "from sys.all_tab_columns col " +
+                               "inner " +
+                               "join sys.all_tables t on col.owner = t.owner " +
+                               "and col.table_name = t.table_name " +
+                               "where col.owner = 'OT' " +
+                               "and col.table_name = '" + tableName + "' " +
+                               "order by col.column_id ";
+
+                    cmd.CommandType = CommandType.Text;
+                    OracleDataReader dr = cmd.ExecuteReader();
+                    var dataTable = new DataTable();
+                    dataTable.Load(dr);
+                    var dataGrid = new DataGrid(); //{ ItemsSource = dataTable.DefaultView, Columns=item.Key };
+                    dataGrid.ItemsSource = dataTable.DefaultView;
+                    //dataGrid.MaxColumnWidt = '*';
+
+                    //DataGridContainer.Children.Add(dataGrid);
+                    
+                }
+            }
+
+
+            /*
+                List<string> tableData = new List<string>();
+            tableData.Add(t.Name);
+            foreach(string s in t.Col)
+            {
+                tableData.Add(s);
+            }
+
+            foreach(string s in tableData)
+            {
+                Console.WriteLine(s);
+            }
+            */
+
+            //var dataGrid = new DataGrid { ItemsSource = tableData };
+            //DataGridContainer.Items.Add(dataGrid);
+            //string tableName = t.Name;
+            /*
+            String connectionString = "TNS_ADMIN=C:\\sqlInstaller\\network\\admin;USER ID=OT;PASSWORD=Orcl1234;DATA SOURCE=ORCLPDB;PERSIST SECURITY INFO=True";
+            using (OracleConnection con = new OracleConnection(connectionString))
+            {
+                con.Open();
+                OracleCommand cmd = con.CreateCommand();
+                cmd.CommandText =
+                           "select col.column_name as \"" + tableName + "\" " +
+                           "from sys.all_tab_columns col " +
+                           "inner " +
+                           "join sys.all_tables t on col.owner = t.owner " +
+                           "and col.table_name = t.table_name " +
+                           "where col.owner = 'OT' " +
+                           "and col.table_name = '" + tableName + "' " +
+                           "order by col.column_id ";
+
+                cmd.CommandType = CommandType.Text;
+                OracleDataReader dr = cmd.ExecuteReader();
+                var dataTable = new DataTable();
+                dataTable.Load(dr);
+                var dataGrid = new DataGrid { ItemsSource = dataTable.DefaultView, Width='*'};
+                DataGridContainer.Items.Add(dataGrid);
+            }
+            */
             
         }
 
-        /// <summary>
-        /// This function opens a conenction to the database to determine if the string parameter is a valid table name.
-        /// </summary>
-        /// <param name="name">This is checked to see if this is a valid table name the user has access to.</param>
-        /// <returns>true if name is a valid table in the database and false otherwise.</returns>
-        private Boolean TableExist(string name)
-        {
-            bool flag = false;
-            using (OracleConnection con = new OracleConnection(connectionString))
-            {
-                try
-                {
-                    con.Open();
-                    OracleCommand cmd = con.CreateCommand();
-                    cmd.CommandText =
-                        "select tname from tab where tname = '" + name + "'";
-                    cmd.CommandType = CommandType.Text;
-                    OracleDataReader dr = cmd.ExecuteReader();
-                    string result = "";
-                    while (dr.Read())
-                    {
-                        result = dr.GetString(0);
-                    }
-                    dr.Close();
-                    if (result != "")
-                        flag = true;
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.ToString());
-                }
-            }
-            return flag;
-        }
-        private Boolean PackageExist(string name)
-        {
-            bool flag = false;
-            using (OracleConnection con = new OracleConnection(connectionString))
-            {
-                try
-                {
-                    con.Open();
-                    OracleCommand cmd = con.CreateCommand();
-                    cmd.CommandText =
-                        "select tname from tab where tname = '" + name + "'";
-                    cmd.CommandType = CommandType.Text;
-                    OracleDataReader dr = cmd.ExecuteReader();
-                    string result = "";
-                    while (dr.Read())
-                    {
-                        result = dr.GetString(0);
-                    }
-                    dr.Close();
-                    if (result != "")
-                        flag = true;
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.ToString());
-                }
-            }
-            return flag;
-        }
-        private void pakageParser(string packageName)
-        {
-            List<string> packageTables = new List<string>();
-            using (OracleConnection con = new OracleConnection(connectionString))
-            {
-                try
-                {
-                    con.Open();
-                    OracleCommand cmd = con.CreateCommand();
-                    cmd.CommandText =
-                        "SELECT Text " +
-                        "FROM ALL_SOURCE " +
-                        "WHERE type = 'PACKAGE' " +
-                        "and name = '" + packageName + "' " +
-                        "ORDER BY line ";
-                    cmd.CommandType = CommandType.Text;
-                    OracleDataReader dr = cmd.ExecuteReader();
-                    string package = "";
-                    while(dr.Read())
-                    {
-                        package += dr.GetString(0);
-                    }
-                    
-                    //package = package.Replace("\n", "");
-                    while (package.Contains("("))
-                    {
-                        int start = package.IndexOf("(");
-                        int end = package.IndexOf(")") + 1;
-                        package = package.Remove(start, end - start);
-                    }
-                    Console.WriteLine(package);
-                    dr.Close();
-                }
-                catch(Exception e)
-                {
-
-                }
-            }
-        }
-        
-        private void TableSearch_Button_Click(object sender, RoutedEventArgs e)
-        {
-            TableSearch.IsEnabled = false;
-            string tableText = tableSearch.Text;
-            masterList.Clear();
-
-            if (TableExist(tableText))
-                createTableRelations(tableText, depth);
-            else
-                MessageBox.Show("Table '" + tableText + "' does not exist in the database", "Table Not Found");
-            TableSearch.IsEnabled = true;
-        }
-
-        private void depthOfSearch_Selection(object sender, SelectionChangedEventArgs e)
-        {
-            depth = Convert.ToInt32(depthOfSearch.SelectedIndex);
-        }
     }
 }

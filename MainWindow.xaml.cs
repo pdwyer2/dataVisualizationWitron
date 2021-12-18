@@ -49,7 +49,7 @@ public class Table
         partOfPackage = partOfPackage == false;
     }
 
-    public string ToString()
+    public override string ToString()
     {
         string result = "";
         int width = Name.Length+2;
@@ -114,7 +114,8 @@ namespace dataVisualizerWPF
                 {
                     con.Open();
                     OracleCommand cmd = con.CreateCommand();
-                    // This query compares the primary key of the starting table to the foreign keys of all other tables and returns matches to find links.
+                    // This query compares the primary key of the starting table to the foreign
+                    // keys of all other tables and returns matches to find links.
                     cmd.CommandText =
                         "select  allCC.TABLE_NAME " +
                         "from all_constraints allC, all_tables allT, all_cons_columns allCC " +
@@ -147,7 +148,8 @@ namespace dataVisualizerWPF
                         resultsForwardLink.Add(dr.GetString(0));
                     }
 
-                    //This next query query compares all the foreign keys present in the starting table and to the primary keys of all other tables and returns matches to find links.
+                    //This next query query compares all the foreign keys present in the starting
+                    //table and to the primary keys of all other tables and returns matches to find links.
                     cmd.CommandText =
                         "select  allCC.TABLE_NAME " +
                         "from all_constraints allC, all_tables allT, all_cons_columns allCC " +
@@ -257,7 +259,7 @@ namespace dataVisualizerWPF
             
             Microsoft.Msagl.WpfGraphControl.GraphViewer viewer = new Microsoft.Msagl.WpfGraphControl.GraphViewer();
             //viewer.
-            viewer.Graph = graph;
+            //viewer.Graph = graph;
 
             //This is a console output in case the visualizer is not working
             foreach (KeyValuePair<string, Table> entry in masterList)
